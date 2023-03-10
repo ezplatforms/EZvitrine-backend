@@ -30,7 +30,9 @@ sonarqube {
 }
 
 bootJar {
-    archiveFileName = "${project.name}-${project.version}.jar"
+    //archiveFileName = "${project.name}-${project.version}.jar"
+    archiveFileName = "ezvitrine-dev.jar"
+
 }
 
 

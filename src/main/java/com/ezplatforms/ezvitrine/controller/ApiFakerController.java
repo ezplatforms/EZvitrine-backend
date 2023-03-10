@@ -4,6 +4,7 @@ package com.ezplatforms.ezvitrine.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -11,6 +12,15 @@ import java.util.Locale;
 
 @RestController
 public class ApiFakerController {
+
+    @Autowired
+    private PortPrinter portPrinter;
+
+    @GetMapping("/port")
+    public String getPort() {
+        portPrinter.printPort();
+        return "Server port: " + portPrinter.getPort();
+    }
 
     @GetMapping("/")
     public String healthCheck() {

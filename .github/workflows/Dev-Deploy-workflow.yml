@@ -6,46 +6,50 @@ on:
       - develop
 
 env:
-  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   DOCKER_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
-  RAILWAY_TOKEN: ${{ secrets.DEV_RAILWAY_TOKEN }}
+  DOCKERHUB_USERNAME : ${{ secrets.DOCKER_USERNAME }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: dev
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
+      #Check-out your repository under $GITHUB_WORKSPACE, so your workflow can access it
+      - uses: actions/checkout@v1
 
-      - name: Setup Java
-        uses: actions/setup-java@v2
+      #Set up JDK 17
+      - name: Set up JDK
+        uses: actions/setup-java@v1
         with:
-          java-version: 11
-
-      - name: Get Timestamp
-        id: timestamp
-        run: echo ::set-output name=TIMESTAMP::$(date +%Y%m%d%H%M%S)
+          java-version: '17'
 
       - name: Package Spring Application
         run: ./gradlew bootJar --no-daemon
 
-      - name: Build Docker Image
-        uses: docker/build-push-action@v2
+      # Login to Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKER_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
         with:
           context: .
+          file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/EZvitrine:dev-${{ steps.timestamp.outputs.TIMESTAMP }}
-          build-args: |
-            JAR_FILE=./build/libs/EZvitrine.jar
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+          tags: ${{ env.DOCKERHUB_USERNAME }}/ezvitrine-backend:latest
 
       - name: Install Railway
         run: npm i -g @railway/cli
 
-      - name: Deploy
-        run: railway up
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Print environment variable
+        run: echo ${{ vars.TEST_TOKEN }}
+
+
+      - name: Print Railway Token
+        run: echo " Print a single environment variable ${{ secrets.DEV_RAILWAY_TOKEN }} "
