@@ -1,0 +1,51 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - develop
+
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+  RAILWAY_TOKEN: ${{ secrets.DEV_RAILWAY_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+
+      - name: Get Timestamp
+        id: timestamp
+        run: echo ::set-output name=TIMESTAMP::$(date +%Y%m%d%H%M%S)
+
+      - name: Package Spring Application
+        run: ./gradlew bootJar --no-daemon
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/EZvitrine:dev-${{ steps.timestamp.outputs.TIMESTAMP }}
+          build-args: |
+            JAR_FILE=./build/libs/EZvitrine.jar
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Install Railway
+        run: npm i -g @railway/cli
+
+      - name: Deploy
+        run: railway up
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
